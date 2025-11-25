@@ -7,6 +7,7 @@ public class Dealer extends Player {
     @Override
     public void takeTurn(Deck deck) {
         while(calculateHandValue() < 17) {
+            System.out.println("Dealer hits.");
             addCard(deck.drawCard());
         }
         System.out.println("Dealer stands.");

@@ -81,12 +81,12 @@ public class BlackjackGame {
 
             System.out.println("Existing profiles:");
             for(String p : profiles) System.out.println("- " + p);
-            System.out.println("Type 'back' to return to the main menu.");
+            System.out.println("Type '0' to return to the main menu.");
 
             System.out.print("Enter username to load: ");
             String selectedUser = scanner.nextLine().trim();
 
-            if(selectedUser.equalsIgnoreCase("back")) {
+            if(selectedUser.equalsIgnoreCase("0")) {
                 return;
             }
 
@@ -139,10 +139,10 @@ public class BlackjackGame {
 
     private void newProfile() {
         while(true) {
-            System.out.print("Enter new username (or type 'back' to return): ");
+            System.out.print("Enter new username (or type '0' to return): ");
             String newUsername = scanner.nextLine().trim();
 
-            if(newUsername.equalsIgnoreCase("back")) {
+            if(newUsername.equalsIgnoreCase("0")) {
                 return;
             }
 
@@ -182,12 +182,12 @@ public class BlackjackGame {
         while(true) {
             System.out.println("Existing profiles:");
             for(String p : profiles) System.out.println("- " + p);
-            System.out.println("Type 'back' to return to the main menu.");
+            System.out.println("Type '0' to return to the main menu.");
 
             System.out.print("Enter username to delete: ");
             String name = scanner.nextLine().trim();
 
-            if(name.equalsIgnoreCase("back")) {
+            if(name.equalsIgnoreCase("0")) {
                 return;
             }
 
@@ -243,26 +243,78 @@ public class BlackjackGame {
                     System.out.println("Enter a number.");
                 }
             }
+            
+            this.deck = new Deck();
+            this.player.resetHand();
+            this.dealer.resetHand();
 
-            deck = new Deck();
-            player.resetHand();
-            dealer.resetHand();
+            this.player.addCard(this.deck.drawCard());
+            this.player.addCard(this.deck.drawCard());
+            this.dealer.addCard(this.deck.drawCard());
+            this.dealer.addCardSilent(this.deck.drawCard());
 
-            player.addCard(deck.drawCard());
-            player.addCard(deck.drawCard());
-            dealer.addCard(deck.drawCard());
-            dealer.addCard(deck.drawCard());
+            System.out.println("\nDealer shows: " + this.dealer.hand.get(0) + " and a face-down card.");
 
-            System.out.println("\nDealer shows: " + dealer.hand.get(0));
-            player.takeTurn(deck);
+            boolean playerStands = false;
+            boolean dealerStands = false;
+            boolean dealerHoleRevealed = false;
+            boolean roundResolved = false;
 
-            if(player.calculateHandValue() > 21) {
-                System.out.println("Busted! Dealer wins this round.");
-                balance -= bet;
+            while(true) {
+                if(!playerStands) {
+                    String action = this.player.promptAction();
+                    if(action.equals("h")) {
+                        this.player.addCard(this.deck.drawCard());
+                    } else {
+                        System.out.println("You chose to stand.");
+                        playerStands = true;
+                    }
+                }
+
+                int playerTotal = this.player.calculateHandValue();
+                boolean playerBust = playerTotal > 21;
+
+                if(playerBust) {
+                    if(!dealerHoleRevealed) {
+                        System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                        dealerHoleRevealed = true;
+                    }
+                    System.out.println("Dealer stands.");
+                    dealerStands = true;
+                    System.out.println("Busted! Dealer wins this round.");
+                    balance -= bet;
+                    roundResolved = true;
+                    break;
+                }
+
+                if(!dealerStands) {
+                    dealerStands = dealerTurnStep();
+                }
+
+                if(this.dealer.calculateHandValue() > 21) {
+                    if(!dealerHoleRevealed) {
+                        System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                        dealerHoleRevealed = true;
+                    }
+                    System.out.println("Dealer busts! You win this round.");
+                    balance += bet;
+                    roundResolved = true;
+                    break;
+                }
+
+                if(playerStands && dealerStands) {
+                    break;
+                }
+            }
+
+            if(roundResolved) {
                 continue;
             }
 
-            dealer.takeTurn(deck);
+            if(!dealerHoleRevealed) {
+                System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                dealerHoleRevealed = true;
+            }
 
             int playerTotal = player.calculateHandValue();
             int dealerTotal = dealer.calculateHandValue();
@@ -318,9 +370,9 @@ public class BlackjackGame {
 
     private String promptForNewPassword() {
         while(true) {
-            System.out.print("Enter password (or type 'back' to cancel): ");
+            System.out.print("Enter password (or type '0' to cancel): ");
             String firstEntry = scanner.nextLine();
-            if(firstEntry.equalsIgnoreCase("back")) {
+            if(firstEntry.equalsIgnoreCase("0")) {
                 return null;
             }
             if(firstEntry.trim().isEmpty()) {
@@ -340,9 +392,9 @@ public class BlackjackGame {
     private boolean authenticateUser(SaveSystem.ProfileData data) {
         final int attemptsAllowed = 3;
         for(int attempt = 1; attempt <= attemptsAllowed; attempt++) {
-            System.out.print("Enter password (or type 'back' to cancel): ");
+            System.out.print("Enter password (or type '0' to cancel): ");
             String input = scanner.nextLine();
-            if(input.equalsIgnoreCase("back")) {
+            if(input.equalsIgnoreCase("0")) {
                 System.out.println("Authentication canceled.");
                 return false;
             }
@@ -356,5 +408,16 @@ public class BlackjackGame {
         }
         System.out.println("Too many incorrect attempts. Returning to main menu.");
         return false;
+    }
+
+    private boolean dealerTurnStep() {
+        if(dealer.calculateHandValue() < 17) {
+            System.out.println("Dealer hits.");
+            dealer.addCard(deck.drawCard());
+            return false;
+        }
+
+        System.out.println("Dealer stands.");
+        return true;
     }
 }

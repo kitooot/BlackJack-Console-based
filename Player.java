@@ -13,7 +13,12 @@ public abstract class Player {
         hand.add(card);
         System.out.println(name + " draws: " + card);
     }
-
+    
+    public void addCardSilent(Card card) {
+        hand.add(card);
+    
+    }
+    
     public void resetHand() {
         hand.clear();
     }

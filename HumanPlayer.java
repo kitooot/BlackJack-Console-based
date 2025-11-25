@@ -8,22 +8,30 @@ public class HumanPlayer extends Player {
         this.scanner = scanner;
     }
 
+    public String promptAction() {
+        while(true) {
+            System.out.print("Do you want to Hit or Stand? (h/s): ");
+            String choice = scanner.nextLine().trim();
+            if(choice.equalsIgnoreCase("h") || choice.equalsIgnoreCase("s")) {
+                return choice.toLowerCase();
+            }
+            System.out.println("Invalid input, enter h or s.");
+        }
+    }
+
     @Override
     public void takeTurn(Deck deck) {
         while(true) {
-            System.out.print("Do you want to Hit or Stand? (h/s): ");
-            String choice = scanner.nextLine();
-            if(choice.equalsIgnoreCase("h")) {
+            String choice = promptAction();
+            if(choice.equals("h")) {
                 addCard(deck.drawCard());
                 if(calculateHandValue() > 21) {
                     System.out.println("You might have busted!");
                     break;
                 }
-            } else if(choice.equalsIgnoreCase("s")) {
+            } else if(choice.equals("s")) {
                 System.out.println("You chose to stand.");
                 break;
-            } else {
-                System.out.println("Invalid input, enter h or s.");
             }
         }
     }
