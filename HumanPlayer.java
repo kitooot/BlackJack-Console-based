@@ -35,4 +35,9 @@ public class HumanPlayer extends Player {
             }
         }
     }
+
+    @Override
+    public String decideAction(Deck deck) {
+        return promptAction();
+    }
 }

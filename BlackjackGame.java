@@ -4,7 +4,7 @@ import java.io.File;
 public class BlackjackGame {
     private Scanner scanner;
     private Deck deck;
-    private HumanPlayer player;
+    private Player player;
     private Dealer dealer;
     private int balance;
     private String username;
@@ -90,6 +90,11 @@ public class BlackjackGame {
                 return;
             }
 
+            if(!selectedUser.matches("[A-Za-z0-9_]+")) {
+                System.out.println("Invalid username format. Use letters, numbers, and underscores only.");
+                continue;
+            }
+
             boolean exists = false;
             for(String p : profiles) {
                 if(p.equals(selectedUser)) {
@@ -109,7 +114,7 @@ public class BlackjackGame {
                 continue;
             }
 
-            if(data.password == null || data.password.isEmpty()) {
+            if(data.getPassword() == null || data.getPassword().isEmpty()) {
                 System.out.println("This profile does not have a password yet. Please set one now.");
                 String newPassword = promptForNewPassword();
                 if(newPassword == null) {
@@ -117,7 +122,7 @@ public class BlackjackGame {
                 }
                 username = selectedUser;
                 password = newPassword;
-                balance = data.balance;
+                balance = data.getBalance();
                 SaveSystem.saveProfile(username, password, balance);
                 System.out.println("Password set successfully. Balance: " + balance);
             } else {
@@ -125,13 +130,19 @@ public class BlackjackGame {
                 if(!authenticated) {
                     return;
                 }
-                username = data.username;
-                password = data.password;
-                balance = data.balance;
+                username = data.getUsername();
+                // we keep password null for existing profiles to avoid storing plaintext
+                password = null;
+                balance = data.getBalance();
                 System.out.println("Profile loaded. Balance: " + balance);
             }
 
-            player = new HumanPlayer(username, scanner);
+            String mode = promptPlayerMode();
+            if(mode != null && mode.equalsIgnoreCase("a")) {
+                player = new AIPlayer(username);
+            } else {
+                player = new HumanPlayer(username, scanner);
+            }
             dealer = new Dealer();
             return;
         }
@@ -151,6 +162,11 @@ public class BlackjackGame {
                 continue;
             }
 
+            if(!newUsername.matches("[A-Za-z0-9_]+")) {
+                System.out.println("Usernames may only contain letters, numbers, and underscores.");
+                continue;
+            }
+
             if(SaveSystem.profileExists(newUsername)) {
                 System.out.println("That username already exists. Choose another.");
                 continue;
@@ -166,7 +182,12 @@ public class BlackjackGame {
             balance = 500;
             SaveSystem.saveProfile(username, password, balance);
             System.out.println("New profile created. Balance: " + balance);
-            player = new HumanPlayer(username, scanner);
+            String mode = promptPlayerMode();
+            if(mode != null && mode.equalsIgnoreCase("a")) {
+                player = new AIPlayer(username);
+            } else {
+                player = new HumanPlayer(username, scanner);
+            }
             dealer = new Dealer();
             return;
         }
@@ -219,7 +240,7 @@ public class BlackjackGame {
     private void playRounds() {
         while(true) {
             if(balance <= 0) {
-                SaveSystem.saveProfile(username, password, balance);
+                SaveSystem.saveBalance(username, balance);
                 if(!handleZeroBalance()) {
                     return;
                 }
@@ -233,7 +254,7 @@ public class BlackjackGame {
                 try {
                     bet = Integer.parseInt(scanner.nextLine());
                     if(bet == 0) {
-                        SaveSystem.saveProfile(username, password, balance);
+                        SaveSystem.saveBalance(username, balance);
                         System.out.println("Game saved. Goodbye!");
                         return;
                     }
@@ -253,7 +274,7 @@ public class BlackjackGame {
             this.dealer.addCard(this.deck.drawCard());
             this.dealer.addCardSilent(this.deck.drawCard());
 
-            System.out.println("\nDealer shows: " + this.dealer.hand.get(0) + " and a face-down card.");
+            System.out.println("\nDealer shows: " + this.dealer.getHand().get(0) + " and a face-down card.");
 
             boolean playerStands = false;
             boolean dealerStands = false;
@@ -262,11 +283,11 @@ public class BlackjackGame {
 
             while(true) {
                 if(!playerStands) {
-                    String action = this.player.promptAction();
+                    String action = this.player.decideAction(this.deck);
                     if(action.equals("h")) {
                         this.player.addCard(this.deck.drawCard());
                     } else {
-                        System.out.println("You chose to stand.");
+                        System.out.println(this.player.getName() + " chose to stand.");
                         playerStands = true;
                     }
                 }
@@ -276,7 +297,7 @@ public class BlackjackGame {
 
                 if(playerBust) {
                     if(!dealerHoleRevealed) {
-                        System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                        System.out.println("Dealer reveals hole card: " + this.dealer.getHand().get(1));
                         dealerHoleRevealed = true;
                     }
                     System.out.println("Dealer stands.");
@@ -293,7 +314,7 @@ public class BlackjackGame {
 
                 if(this.dealer.calculateHandValue() > 21) {
                     if(!dealerHoleRevealed) {
-                        System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                        System.out.println("Dealer reveals hole card: " + this.dealer.getHand().get(1));
                         dealerHoleRevealed = true;
                     }
                     System.out.println("Dealer busts! You win this round.");
@@ -312,7 +333,7 @@ public class BlackjackGame {
             }
 
             if(!dealerHoleRevealed) {
-                System.out.println("Dealer reveals hole card: " + this.dealer.hand.get(1));
+                System.out.println("Dealer reveals hole card: " + this.dealer.getHand().get(1));
                 dealerHoleRevealed = true;
             }
 
@@ -398,7 +419,20 @@ public class BlackjackGame {
                 System.out.println("Authentication canceled.");
                 return false;
             }
-            if(data.password.equals(input)) {
+            // First try verifying assuming stored password is a hash
+            if(SaveSystem.verifyPassword(input, data.getPassword())) {
+                return true;
+            }
+            // If verification failed, check for legacy plaintext storage and upgrade if it matches
+            String stored = data.getPassword();
+            if(stored != null && stored.equals(input)) {
+                // legacy plaintext matched; upgrade to hashed storage
+                try {
+                    SaveSystem.saveProfileHashed(data.getUsername(), SaveSystem.hashPassword(input), data.getBalance());
+                    System.out.println("Password upgraded to hashed storage.");
+                } catch(Exception e) {
+                    // ignore; still allow login
+                }
                 return true;
             }
             int remaining = attemptsAllowed - attempt;
@@ -419,5 +453,14 @@ public class BlackjackGame {
 
         System.out.println("Dealer stands.");
         return true;
+    }
+
+    private String promptPlayerMode() {
+        while(true) {
+            System.out.print("Play as Human or AI? (h/a): ");
+            String choice = scanner.nextLine().trim().toLowerCase();
+            if(choice.equals("h") || choice.equals("a")) return choice;
+            System.out.println("Invalid input. Enter 'h' for Human or 'a' for AI.");
+        }
     }
 }

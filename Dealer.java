@@ -12,4 +12,9 @@ public class Dealer extends Player {
         }
         System.out.println("Dealer stands.");
     }
+
+    @Override
+    public String decideAction(Deck deck) {
+        return calculateHandValue() < 17 ? "h" : "s";
+    }
 }

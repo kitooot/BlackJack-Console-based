@@ -1,8 +1,13 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+/**
+ * Base class for any participant that can receive cards and take a turn.
+ */
 public abstract class Player {
     protected String name;
-    protected ArrayList<Card> hand;
+    private ArrayList<Card> hand;
 
     public Player(String name) {
         this.name = name;
@@ -16,11 +21,18 @@ public abstract class Player {
     
     public void addCardSilent(Card card) {
         hand.add(card);
-    
     }
     
     public void resetHand() {
         hand.clear();
+    }
+
+    public List<Card> getHand() {
+        return Collections.unmodifiableList(hand);
+    }
+
+    public String getName() {
+        return name;
     }
 
     public int calculateHandValue() {
@@ -38,4 +50,10 @@ public abstract class Player {
     }
 
     public abstract void takeTurn(Deck deck);
+    /**
+     * Decide the next action for a single step of a turn.
+     * Should return "h" for hit or "s" for stand. Implementations
+     * that require no input (AI) should compute the action here.
+     */
+    public abstract String decideAction(Deck deck);
 }
