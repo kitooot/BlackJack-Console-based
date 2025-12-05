@@ -113,6 +113,12 @@ a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
 450
 ```
 
+‧₊˚ ┊ Exception Handling
+
+- **File I/O:** The `SaveSystem` performs file reads and writes with error handling to avoid crashes from missing files, permission errors, or malformed data. When a profile file is missing or contains invalid data the game falls back to safe defaults (for example, a starting balance of `500` chips) and will recreate or repair the file where appropriate.
+- **Input validation:** Menus, bets, and other user inputs are parsed defensively. Invalid input (non-numeric bets, out-of-range menu choices, etc.) is rejected with a friendly message and the player is re-prompted instead of terminating the program.
+- **Runtime safeguards:** Gameplay components guard against common runtime issues (such as an empty deck or uninitialized hands) by initializing structures and auto-refilling the deck when necessary, keeping long sessions stable.
+
 ‧₊˚ ┊ Contributors
 | Name | Role |
 | --- | --- |
