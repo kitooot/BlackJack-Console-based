@@ -1,56 +1,95 @@
 # Blackjack Console Game
 
-## Quick Description
-This is a simple console Blackjack game written in Java. Players can create password-protected profiles, place bets, and play rounds against a dealer. The project is also intended to show core OOP ideas in a small, working program.
+Blackjack Console Game is a console-based Java application that lets players enjoy Blackjack directly in the terminal while keeping profiles, balances, and passwords safe.
 
-## What the program does 
-- You can create a profile (username + password) and the program remembers your balance between runs.
-- When you play, you place a bet, receive cards, and decide to Hit or Stand.
-- The dealer shows one card and keeps one face-down (the "hole" card). The dealer's hole card is revealed only when the round's outcome is being decided.
-- The dealer announces every action (Hit or Stand) and shows any card it draws during play.
-- You may choose to play as a Human (you decide) or as an AI player (the computer plays for you).
-- If the deck runs out of cards it is automatically rebuilt and shuffled so the game continues.
+It demonstrates practical Object-oriented Programming (OOP) concepts such as encapsulation, inheritance, polymorphism, and abstraction, together with file-based persistence and modular design.
 
-## Important notes about profiles and passwords
-- Profiles are stored as files named `username.txt` in the project folder.
-- Passwords are stored in a hashed form (SHA-256). If you have an older profile with a plain-text password, the program will accept it once and then upgrade the stored password to a hashed value.
+Users can:
+🎮 Start a round as a human player or let the AI play automatically
+💰 Place bets, win or lose chips, and keep balances between sessions
+🔐 Create, load, or delete password-protected profiles without leaving the app
+🃏 Watch the dealer narrate every hit or stand while keeping the hole card hidden until showdown
+🔄 Return to the main menu safely whenever they input `0` on a prompt that allows cancellation
 
-## Key features 
-- Encapsulation: internal data like a player's hand is kept private and exposed through safe methods.
-- Inheritance: a `Player` base class is extended by `HumanPlayer`, `AIPlayer`, and `Dealer`.
-- Polymorphism: the game talks to players through the `Player` type, it doesn't need to know whether the player is human or AI.
-- Abstraction: `Player` defines the required behavior (take a turn, decide an action) without specifying how it must be done.
-- Defensive IO: file reads/writes and number parsing are guarded so bad input won't crash the program.
+Profile & Save Storage
+💾 Each profile is saved as `username.txt` in the project root
+🧾 Line 1 stores the SHA-256 password hash; line 2 stores the current balance
+♻️ Legacy plaintext passwords are upgraded to hashes automatically after the next login
+🛡️ Invalid or missing data defaults to 500 chips to keep the game stable
 
-## How to run
-OPTION 1:
-Open PowerShell in the project folder and run: 
+‧₊˚ ┊ Project Structure
+📂 BlackJack-Console-based-main/
+├── ☕ Main.java
+├── ☕ BlackjackGame.java
+├── ☕ Player.java
+├── ☕ HumanPlayer.java
+├── ☕ AIPlayer.java
+├── ☕ Dealer.java
+├── ☕ Deck.java
+├── ☕ Card.java
+├── ☕ SaveSystem.java
+├── 📄 README.md
+├── 📄 Script.md
+└── 📄 CodeFunctions.md
+
+Main.java — Entry point that wires the scanner and launches the game loop.
+BlackjackGame.java — Menu navigation, profile management, betting flow, and round orchestration.
+Player.java — Abstract base class that manages shared state and declares the turn contract.
+HumanPlayer.java / AIPlayer.java / Dealer.java — Concrete behaviors for each participant.
+Deck.java / Card.java — Card modeling, deck shuffling, and automatic replenishment.
+SaveSystem.java — File I/O for saving and loading hashed passwords and balances.
+
+How to Run the Program
+Open Windows PowerShell in the project folder and compile:
+
 ```powershell
 javac *.java
+```
+
+Run the game with:
+
+```powershell
 java Main
 ```
 
-If you add or change files, re-run `javac` before `java`.
+Recompile with `javac *.java` whenever you change any source files.
 
-OPTION 2:
-Run or Debug Java
+‧₊˚ ┊ Features
+🎯 Profile Menu. List, create, load, or delete players without restarting the program.
+🗣️ Dealer Narration. Dealer announces each decision and only reveals the hole card at round end.
+🤖 AI Mode. `AIPlayer` demonstrates automated decision-making using the same polymorphic contracts as humans.
+🃠 Auto Deck Reset. Deck refills and shuffles when empty so long sessions stay seamless.
+🪙 Persistent Balance. Every round saves updated chip counts through `SaveSystem`.
+🛑 Safe Input Handling. Defensive parsing prevents crashes on invalid menu choices or bets.
 
-## Demo / Typical session 
-- Program: "Welcome to Blackjack" and rules printed.
-- Main menu: list, load, create, delete profiles.
-- Create: enter a username and password, then choose `h` for Human or `a` for AI.
-- During play: the dealer will show its first card and say the second is face-down. When you Hit the dealer may also take turns and will print what it does.
-- At round end: hole card is revealed, winner decided, balance updated and saved. If balance becomes 0 you'll be offered options to delete the profile or create a new one (or return to the main menu).
+‧₊˚ ┊ Object-oriented Principles
+💊 Encapsulation
+`Player.java` keeps the hand private and exposes it through an unmodifiable list so other classes cannot mutate the cards directly.
 
-## Sample Output
-Here is a brief example of what a short session looks like in the terminal:
+```java
+private final ArrayList<Card> hand = new ArrayList<>();
 
+public List<Card> getHand() {
+    return Collections.unmodifiableList(hand);
+}
+```
+
+💡 Abstraction
+`Player` defines abstract methods `takeTurn(Deck)` and `decideAction(Deck)`, allowing subclasses to supply their own implementations without revealing internal details.
+
+🧬 Inheritance
+`HumanPlayer`, `AIPlayer`, and `Dealer` extend `Player`, reusing shared code while tailoring decision logic for each role.
+
+🎭 Polymorphism
+`BlackjackGame.java` holds a `Player` reference (`private Player player;`) and calls `player.takeTurn(deck)` or `player.decideAction(deck)`, dynamically dispatching to the correct subclass at runtime.
+
+‧₊˚ ┊ Example Output
 ```
 === Welcome to Blackjack ===
-Main Menu: 
-1) Show profiles  
-2) Load profile  
-3) Create profile  
+Main Menu:
+1) Show profiles
+2) Load profile
+3) Create profile
 4) Delete profile
 Choice: 3
 Enter new username (or '0' to return): demo
@@ -68,109 +107,18 @@ Round result: Dealer wins. New balance: 450
 Profile saved.
 ```
 
-## Files and short roles
-`Main.java` — program entry point.
-`BlackjackGame.java` — menus, profile handling, betting, and the core round loop (it coordinates player and dealer actions and reveals the dealer's hole card only at round end).
-`Player.java` — abstract base class with shared player behavior.
-`HumanPlayer.java` / `AIPlayer.java` / `Dealer.java` — specific player behaviors.
-`Deck.java` / `Card.java` — card and deck logic (deck auto-refills when empty).
-`SaveSystem.java` — saves/loads username, password hash, and balance.
+‧₊˚ ┊ demo.txt Snippet
+```
+a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3
+450
+```
 
-## Program Structure 
-This section expands the brief file list into the main classes, their responsibilities, and how they interact.
+‧₊˚ ┊ Contributors
+| Name | Role |
+| --- | --- |
+| Psyvhin Nieva | Developer |
+| Keith Mhartin Tambuli | Developer |
+| Johan Cedrick Nabing | Developer |
 
-- `Main.java`
-	- Role: program entry point. Creates required objects (Scanner / BlackjackGame) and starts the main loop.
-
-- `BlackjackGame.java`
-	- Role: orchestrates the application. Presents menus, handles profile create/load/delete, accepts bets, deals cards, coordinates player and dealer actions, applies game rules, and saves balances.
-	- Notes: Uses a `Player` reference so a `HumanPlayer` or `AIPlayer` can be used interchangeably; controls dealer hole-card reveal at round end.
-
-- `Player.java` (abstract)
-	- Role: shared state and utility functions used by any participant (name, hand, add/clear cards, calculate hand value). Declares abstract behavior required by subclasses.
-	- Key responsibilities: manage a player's hand safely, calculate totals (including Ace logic), and define `takeTurn(Deck)` / `decideAction(Deck)` which concrete players implement.
-
-- `HumanPlayer.java`
-	- Role: prompts the human user for actions (Hit/Stand) and implements interactive `takeTurn` behavior.
-
-- `AIPlayer.java`
-	- Role: automated player useful for demos/testing. Decides actions programmatically (for example, hits while below a fixed threshold).
-
-- `Dealer.java`
-	- Role: implements the house rules (dealer hits until reaching at least 17). Dealer announces actions and draws under the game's control.
-
-- `Deck.java` / `Card.java`
-	- Role: model a standard 52-card deck and card values. `Deck` manages cards inside an `ArrayList<Card>`, shuffles, and refills/shuffles automatically when empty.
-
-- `SaveSystem.java`
-	- Role: file-based persistence for player profiles. Reads/writes username, password hash, and balance. Handles legacy plain-text passwords by upgrading the stored value to a hash on first successful login.
-
-Relationships: `BlackjackGame` composes `Player`, `Deck`, and `SaveSystem`. `Player` is the abstract superclass for `HumanPlayer`, `AIPlayer`, and `Dealer`.
-
-## OOP Concepts Applied
-Below are the four main OOP principles required by the assignment, with a plain-language explanation and short code examples showing where each is implemented.
-
-- Encapsulation
-	- Keep internal state hidden and expose only safe operations so other parts of the program cannot corrupt the object's data.
-	- `Player.java` keeps the hand private and provides a controlled accessor.
-	- Example (from `Player.java`):
-		private ArrayList<Card> hand;
-
-		public List<Card> getHand() {
-				return Collections.unmodifiableList(hand);
-		}
-
-- Inheritance
-	-Share common code by defining a base (super) class and create specialized versions (subclasses) that extend or customize the behavior.
-	-`Player` is the abstract base class; concrete players (human, AI, dealer) extend it.
-	- Example (class relationships):
-
-		Player (abstract)
-		├─ HumanPlayer
-		├─ AIPlayer
-		└─ Dealer
-
-- Polymorphism
-	-Use a superclass type to refer to objects of different subclasses and rely on overridden methods to provide the right runtime behavior.
-	-`BlackjackGame` stores `private Player player;` and calls `player.decideAction(deck)` which dispatches to the concrete subclass method.
-	- Example (from `BlackjackGame.java`):
-
-		private Player player; // may be HumanPlayer or AIPlayer
-
-		String action = player.decideAction(deck); // dynamic dispatch
-
-- Abstraction
-	-Define an abstract contract (abstract class or interface) that specifies required behavior without dictating how it's implemented.
-	-`Player` declares abstract methods that each subclass implements to provide their turn logic.
-	- Example (from `Player.java`):
-
-		public abstract class Player {
-				public abstract void takeTurn(Deck deck);
-				public abstract String decideAction(Deck deck);
-		}
-
-## OOP Evidence
-Use these short references to point a grader or reviewer to concrete code that proves each OOP principle was applied:
-
-- **Encapsulation**: `Player.java` keeps the hand private and exposes a safe accessor:
-	- `private ArrayList<Card> hand;` and `public List<Card> getHand()`
-- **Inheritance**: `Player` is the abstract base and has at least three subclasses:
-	- `Player` -> `HumanPlayer`, `AIPlayer`, `Dealer`
-- **Polymorphism**: `BlackjackGame.java` uses a `Player` reference and calls overridden methods:
-	- `private Player player;` then `player.decideAction(deck)` / `player.takeTurn(deck)`
-- **Abstraction**: `Player` declares abstract methods that subclasses implement:
-	- `public abstract void takeTurn(Deck deck);` and `public abstract String decideAction(Deck deck);`
-- **Exception handling**: `SaveSystem.java` and input parsing in `BlackjackGame.java` use try/catch to avoid crashes on bad input.
-
-## Acknowledgements
--First and foremost, we thank Ma'am Grace Alib for her guidance. 
--We also acknowledge our parents, siblings, classmates, and friends for their support. 
--Special thanks to Batangas State University - Alangilan Campus and the College of Informatics and Computing Sciences for providing the learning environment and resources.
-
-## Author
-- MB Hustlers
--(Psyvhin Nieva, Keith Mhartin Tambuli, Johan Cedrick Nabing)
-
-## Next improvements (ideas)
-- Use a stronger password storage method (salted KDF).
-- Add unit tests and a dedicated setting to default to AI play.
+‧₊˚ ┊ Acknowledgment
+We sincerely thank Ma'am Grace Alib for her guidance, plus our families, classmates, and the Batangas State University - Alangilan Campus (College of Informatics and Computing Sciences) for providing the support and resources that made this project possible.
